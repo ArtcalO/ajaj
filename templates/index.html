@@ -1,0 +1,93 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+	<script type="text/javascript" src="{% static 'jquery-3.3.1.min.js' %}"></script>
+	<script type="text/javascript" src="{% static 'jquery.cookie.js' %}"></script>
+	<title></title>
+</head>
+<body>
+
+</body>
+<script type="text/javascript">
+function templatePost(id, message){
+	return `
+	<div class="post" data-id="`+id+`" id="post`+id+`">
+		<div>
+			<strong>`+message+`</strong>
+		</div>
+		<div>
+			<ul class="comments">
+			</ul>
+				<input type="text" class="champ-comm">
+				<button type="button" class="btn btn-dark">comment</button>
+		</div>
+	</div>
+	`
+}
+function templateComment(id, message){
+	return `<li data-id="`+id+`"><em>`+message+`</em></li>`
+}
+
+$('body').on('click', 'button', function(event) {
+	event.preventDefault();
+	let post_id = $(this).closest('.post').attr('data-id');
+	let comment = $(this).siblings('input').val();
+	console.log(comment)
+	let data = {'post':post_id, 'text':comment}
+	$.ajax({
+		url: '/api/comments/',
+		type: 'post',
+		headers:{'X-CSRFToken':$.cookie('csrftoken')},
+		dataType: 'json',
+		data: data,
+	})
+	.done(function(data) {
+		console.log(data);
+	})
+	.fail(function() {
+		console.log("error");
+	})
+	.always(function() {
+		console.log("complete");
+	});
+	
+});
+
+$.ajax({
+	url: '/api/posts/',
+	headers:{'X-CRSFToken':$.cookie('crsftoken')},
+	type: 'GET',
+	dataType: 'json',
+})
+.done(function(data) {
+	for(let post of data){
+		$("body").append(templatePost(post.id, post.text));
+	}
+	$.ajax({
+		url: '/api/comments/',
+		type: 'GET',
+		dataType: 'json',
+	})
+	.done(function(data) {
+		for(let comment of data){
+			let post_id = '#post'+comment.post;
+
+			let $post = $(post_id);
+			$post.find('.comments').append(templateComment(comment.id, comment.text));
+		}
+	})
+	.fail(function() {
+		console.log("error");
+	})
+	
+})
+.fail(function() {
+	console.log("error");
+});
+
+
+	
+</script>
+</html>
+
