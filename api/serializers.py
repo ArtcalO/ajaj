@@ -6,6 +6,13 @@ class PostSerializer(serializers.ModelSerializer):
 		model = Post
 		fields = "__all__"
 
+	def create(self, validated_data):
+		validated_data['user'] = self.context['request'].user
+		print(validated_data['user'])
+		obj = Post(user=self.context['request'].user, text=validated_data['text'])
+		obj.save()
+		return obj
+
 class CommentSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = Comment

@@ -10,27 +10,109 @@
 
 </body>
 <script type="text/javascript">
+
+
 function templatePost(id, message){
+
 	return `
 	<div class="post" data-id="`+id+`" id="post`+id+`">
 		<div>
 			<strong>`+message+`</strong>
+			<button type="button" class="delete"  >Delete</button>
+			<button type="button" class="update" >Update</button>
+			<button type="button" class="newPost" >NewPost</button><br>
 		</div>
 		<div>
-			<ul class="comments">
-			</ul>
+			<ul class="comments"></ul>
 				<input type="text" class="champ-comm">
-				<button type="button" class="btn btn-dark">comment</button>
+				<button type="button" class="comment">Comment</button>
 		</div>
-	</div>
+	</div><br>
 	`
 }
 function templateComment(id, message){
 	return `<li data-id="`+id+`"><em>`+message+`</em></li>`
 }
 
-$('body').on('click', 'button', function(event) {
+
+
+$('body').on('click', '.delete', function(e){
+	e.preventDefault();
+
+	let post_id = $(this).closest('.post').attr('data-id');
+	console.log(post_id);
+	let data = {'id':post_id};
+
+	var action = confirm("Are u Sure to delete this post ?");
+	if(action != false){
+		$.ajax({
+			url: '/api/posts/'+post_id+'/',
+			type: 'DELETE',
+			headers:{'X-CSRFToken':$.cookie('csrftoken')},
+			dataType: 'json',
+			data: data,
+		})
+		.done(function(data) {
+			console.log(data);
+		})
+		.fail(function(data) {
+			console.log(data);
+		});
+	}
+
+});
+
+$('body').on('click', '.update', function(){
+
+	let newPost = prompt("Nouveau Post");
+	let render = $(this).siblings('strong');
+	let post_id = $(this).closest('.post').attr('data-id');
+	console.log(post_id);
+	let data = {'id': post_id, 'text': newPost};
+	console.log(data);
+	$.ajax({
+		url : '/api/posts/'+post_id+'/',
+		type : 'PATCH',
+		headers : {'X-CSRFToken': $.cookie('csrftoken')},
+		dataType : 'json',
+		data : data,
+
+	})
+	.done(function(data){
+		render.text(data.text);
+	})
+	.fail(function(data){
+		console.log(data);
+	});
+
+	
+});
+
+
+$('body').on('click', '.newPost', function(){
+	let createPost = prompt('Votre post : ');
+	let data = {'text' : createPost};
+
+	$.ajax({
+		url : '/api/posts/',
+		type : 'POST',
+		headers : {'X-CSRFToken' : $.cookie('csrftoken')},
+		dataType : 'json',
+		data : data,
+	})
+	.done(function(data){
+		console.log(data);
+	})
+	.fail(function(data){
+		console.log(data);
+	});
+
+});
+	
+
+$('body').on('click', '.comment', function(event) {
 	event.preventDefault();
+	let render = $(this).siblings('.comments');
 	let post_id = $(this).closest('.post').attr('data-id');
 	let comment = $(this).siblings('input').val();
 	console.log(comment)
@@ -43,16 +125,16 @@ $('body').on('click', 'button', function(event) {
 		data: data,
 	})
 	.done(function(data) {
+		render.append(templateComment(data.id, data.text));
+	})
+	.fail(function(data) {
 		console.log(data);
-	})
-	.fail(function() {
-		console.log("error");
-	})
-	.always(function() {
-		console.log("complete");
 	});
 	
 });
+
+
+
 
 $.ajax({
 	url: '/api/posts/',
@@ -85,6 +167,8 @@ $.ajax({
 .fail(function() {
 	console.log("error");
 });
+
+
 
 
 	
